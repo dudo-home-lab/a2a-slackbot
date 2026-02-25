@@ -8,5 +8,7 @@
         "module": "nodenext",
         "outDir": "./dist",
         "strict": true
-    }
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"]
 }

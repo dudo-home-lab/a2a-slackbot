@@ -1,12 +1,11 @@
 import { App, LogLevel } from '@slack/bolt';
-import 'dotenv/config';
 import registerListeners from './listeners/index.js';
 
 // For development purposes only
 const tempDB = new Map();
 
 const app = new App({
-  logLevel: LogLevel.DEBUG,
+  logLevel: LogLevel[(process.env.LOG_LEVEL || 'INFO').toUpperCase() as keyof typeof LogLevel],
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   clientId: process.env.SLACK_CLIENT_ID,
   clientSecret: process.env.SLACK_CLIENT_SECRET,
@@ -61,12 +60,4 @@ const app = new App({
 /** Register Listeners */
 registerListeners(app);
 
-/** Start Bolt App */
-(async () => {
-  try {
-    await app.start(process.env.PORT || 3000);
-    app.logger.info('⚡️ Bolt app is running! ⚡️');
-  } catch (error) {
-    app.logger.error('Unable to start App', error);
-  }
-})();
+export default app;

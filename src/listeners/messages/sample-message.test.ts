@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { beforeEach, describe, it, mock } from 'node:test';
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from '@slack/bolt';
-import { sampleMessageCallback } from '../../listeners/messages/sample-message.js';
+import { sampleMessageCallback } from './sample-message.js';
 import { fakeLogger, fakeSay } from '../helpers.js';
 
 const fakeContext = {

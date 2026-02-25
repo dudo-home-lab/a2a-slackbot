@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { beforeEach, describe, it, mock } from 'node:test';
 import type { AllMiddlewareArgs, SlackEventMiddlewareArgs } from '@slack/bolt';
 import type { WebClient } from '@slack/web-api';
-import { appHomeOpenedCallback } from '../../listeners/events/app-home-opened.js';
+import { appHomeOpenedCallback } from './app-home-opened.js';
 import { fakeClient, fakeLogger } from '../helpers.js';
 
 const fakeEvent = {

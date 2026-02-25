@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { beforeEach, describe, it, mock } from 'node:test';
 import type { AllMiddlewareArgs, SlackViewMiddlewareArgs } from '@slack/bolt';
 import type { WebClient } from '@slack/web-api';
-import { sampleViewCallback } from '../../listeners/views/sample-view.js';
+import { sampleViewCallback } from './sample-view.js';
 import { fakeAck, fakeClient, fakeLogger } from '../helpers.js';
 
 const fakeBody = {

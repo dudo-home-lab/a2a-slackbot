@@ -2,14 +2,14 @@
   "name": "bolt-ts-starter-template",
   "version": "1.0.0",
   "description": "A scaffold template for Slack apps",
-  "main": "dist/app.js",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
-    "start": "node ./dist/app.js",
-    "lint": "npx @biomejs/biome check *.ts listeners tests",
-    "lint:fix": "npx @biomejs/biome check --write *.ts listeners tests",
+    "start": "node ./dist/index.js",
+    "lint": "npx @biomejs/biome check src",
+    "lint:fix": "npx @biomejs/biome check --write src",
     "test": "npm run build && npm run lint && node --import tsx --test"
   },
   "author": "Slack Technologies, LLC",
@@ -28,11 +28,15 @@
     "url": "https://github.com/slack-samples/bolt-ts-starter-template/issues"
   },
   "dependencies": {
+    "@a2a-js/sdk": "^0.3.10",
     "@slack/bolt": "^4.6.0",
-    "dotenv": "~17.2.3"
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",
+    "@slack/types": "^2.20.0",
+    "@types/node": "^25.3.0",
+    "@types/uuid": "^10.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

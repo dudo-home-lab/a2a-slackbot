@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { beforeEach, describe, it, mock } from 'node:test';
 import type { AllMiddlewareArgs, SlackCommandMiddlewareArgs } from '@slack/bolt';
-import { sampleCommandCallback } from '../../listeners/commands/sample-command.js';
+import { sampleCommandCallback } from './sample-command.js';
 import { fakeAck, fakeLogger } from '../helpers.js';
 
 const fakeRespond = mock.fn();

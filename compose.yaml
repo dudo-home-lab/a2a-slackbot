@@ -1,0 +1,78 @@
+services:
+  npm: &npm
+    profiles: [tasks]
+    env_file:
+      - path: .env
+        required: false
+    tty: true
+    stdin_open: true
+    build:
+      context: .
+      target: base
+    entrypoint: npm
+    command: help
+    volumes:
+      - .:/usr/src/app:delegated
+      - node_modules:/usr/src/app/node_modules:cached
+
+  npx: &npx
+    <<: *npm
+    profiles: [tasks]
+    entrypoint: npx
+    command: -h
+
+  node:
+    <<: *npm
+    profiles: [tasks]
+    entrypoint: node
+    command: --help
+
+  # We can't use <<: *npm with develop.watch due to the volume overlap.
+  app:
+    env_file:
+      - path: .env
+        required: false
+    tty: true
+    stdin_open: true
+    build:
+      context: .
+      target: builder
+    entrypoint: npm
+    command: run start
+    ports:
+      - ${PORT:-3000}:${PORT:-3000}
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src/
+          target: /usr/src/app/src/
+        - action: sync+restart
+          path: ./package.json
+          target: /usr/src/app/package.json
+        - action: sync+restart
+          path: ./package-lock.json
+          target: /usr/src/app/package-lock.json
+    volumes:
+      - node_modules:/usr/src/app/node_modules:cached
+
+  install:
+    <<: *npm
+    profiles: [tasks]
+    command: install --include=dev
+
+  lint:
+    <<: *npm
+    profiles: [tasks]
+    command: run lint
+    depends_on:
+      - install
+
+  test:
+    <<: *npm
+    profiles: [tasks]
+    command: run test
+    depends_on:
+      - install
+
+volumes:
+  node_modules:

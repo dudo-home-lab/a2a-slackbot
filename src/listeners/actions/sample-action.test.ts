@@ -1,54 +1,59 @@
 import assert from 'node:assert';
 import { beforeEach, describe, it, mock } from 'node:test';
-import type { AllMiddlewareArgs, SlackShortcutMiddlewareArgs } from '@slack/bolt';
+import type { AllMiddlewareArgs, BlockAction, SlackActionMiddlewareArgs } from '@slack/bolt';
 import type { WebClient } from '@slack/web-api';
-import { sampleShortcutCallback } from '../../listeners/shortcuts/sample-shortcut.js';
+import { sampleActionCallback } from './sample-action.js';
 import { fakeAck, fakeClient, fakeLogger } from '../helpers.js';
 
-const fakeShortcut = {
-  trigger_id: 't1234',
+const fakeBody = {
+  view: {
+    type: 'modal',
+    id: 'test_id',
+    hash: '156772938.1827394',
+  },
 };
 
 const buildArguments = ({
   ack = fakeAck,
+  body = fakeBody,
   client = fakeClient,
   logger = fakeLogger,
-  shortcut = fakeShortcut,
 }: {
   ack?: typeof fakeAck;
+  body?: Record<string, unknown>;
   client?: WebClient;
   logger?: typeof fakeLogger;
-  shortcut?: Record<string, unknown>;
-}): AllMiddlewareArgs & SlackShortcutMiddlewareArgs => {
+}): AllMiddlewareArgs & SlackActionMiddlewareArgs<BlockAction> => {
   return {
     ack,
+    body,
     client,
     logger,
-    shortcut,
-  } as unknown as AllMiddlewareArgs & SlackShortcutMiddlewareArgs;
+  } as unknown as AllMiddlewareArgs & SlackActionMiddlewareArgs<BlockAction>;
 };
 
-describe('shortcuts', () => {
+describe('actions', () => {
   beforeEach(() => {
     fakeAck.mock.resetCalls();
     fakeLogger.resetCalls();
   });
 
-  it('should acknowledge and open modal view', async () => {
-    const spy = mock.method(fakeClient.views, 'open', async () => ({
+  it('should acknowledge and update view', async () => {
+    const spy = mock.method(fakeClient.views, 'update', async () => ({
       ok: true,
     }));
 
-    await sampleShortcutCallback(buildArguments({}));
+    await sampleActionCallback(buildArguments({}));
 
     assert(fakeAck.mock.callCount() === 1);
     assert(spy.mock.callCount() === 1);
 
     const callArgs = spy.mock.calls[0].arguments[0];
     assert(callArgs);
-    assert('trigger_id' in callArgs);
-    assert(callArgs.trigger_id === fakeShortcut.trigger_id);
     assert(callArgs.view);
+    assert('view_id' in callArgs);
+    assert(callArgs.view_id === fakeBody.view.id);
+    assert(callArgs.hash === fakeBody.view.hash);
   });
 
   it('should log error when ack throws exception', async () => {
@@ -56,11 +61,11 @@ describe('shortcuts', () => {
     const ack = mock.fn(async () => {
       throw testError;
     });
-    const spy = mock.method(fakeClient.views, 'open', async () => ({
+    const spy = mock.method(fakeClient.views, 'update', async () => ({
       ok: true,
     }));
 
-    await sampleShortcutCallback(
+    await sampleActionCallback(
       buildArguments({
         ack: ack,
       }),

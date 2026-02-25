@@ -35,9 +35,11 @@
     "oauth_config": {
         "scopes": {
             "bot": [
+                "assistant:write",
                 "channels:history",
                 "chat:write",
-                "commands"
+                "commands",
+                "im:history"
             ]
         }
     },
@@ -45,7 +47,10 @@
         "event_subscriptions": {
             "bot_events": [
                 "app_home_opened",
-                "message.channels"
+                "assistant_thread_started",
+                "assistant_thread_context_changed",
+                "message.channels",
+                "message.im"
             ]
         },
         "interactivity": {
