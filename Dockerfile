@@ -11,19 +11,19 @@ COPY tsconfig.json ./
 # Update npm to the latest version.
 RUN npm install -g npm@latest
 
+FROM base AS builder
+
+# Build the TypeScript application
+RUN npm run build
+
+# Continue with the official LTS slim Node image to create a production image.
+FROM node:24-slim
+
 # Install all dependencies (including devDependencies for TypeScript)
 RUN npm ci --silent
 
 # Copy the source code from the current directory to the working directory inside the container.
 COPY . .
-
-FROM base as builder
-
-# Build the TypeScript application
-RUN npm run build
-
-# Continue with the official LTS Node image to create a production image.
-FROM node:24
 
 WORKDIR /usr/src/app
 

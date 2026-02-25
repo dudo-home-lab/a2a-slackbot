@@ -27,11 +27,26 @@ services:
     entrypoint: node
     command: --help
 
+  a2a-agent:
+    tty: true
+    stdin_open: true
+    build:
+      context: ../a2a-acme-agent
+      target: builder
+    entrypoint: npm
+    command: run start
+    ports:
+      - 4000:4000
+    volumes:
+      - a2a_agent_node_modules:/usr/src/app/node_modules:cached
+
   # We can't use <<: *npm with develop.watch due to the volume overlap.
   app:
     env_file:
       - path: .env
         required: false
+    environment:
+      - A2A_AGENT_URL=http://a2a-agent:4000
     tty: true
     stdin_open: true
     build:
@@ -41,6 +56,8 @@ services:
     command: run start
     ports:
       - ${PORT:-3000}:${PORT:-3000}
+    depends_on:
+      - a2a-agent
     develop:
       watch:
         - action: sync+restart
@@ -76,3 +93,4 @@ services:
 
 volumes:
   node_modules:
+  a2a_agent_node_modules:

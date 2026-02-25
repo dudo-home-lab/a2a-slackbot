@@ -1,7 +1,7 @@
 {
-  "name": "bolt-ts-starter-template",
+  "name": "a2a-slackbot",
   "version": "1.0.0",
-  "description": "A scaffold template for Slack apps",
+  "description": "A Slack bot powered by the A2A protocol",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -10,22 +10,22 @@
     "start": "node ./dist/index.js",
     "lint": "npx @biomejs/biome check src",
     "lint:fix": "npx @biomejs/biome check --write src",
-    "test": "npm run build && npm run lint && node --import tsx --test"
+    "test": "npm run build && npm run lint"
   },
-  "author": "Slack Technologies, LLC",
+  "author": "dudo-home-lab",
   "license": "MIT",
   "keywords": [
     "slack",
     "bolt",
-    "slackapi",
+    "a2a",
     "typescript"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/slack-samples/bolt-ts-starter-template.git"
+    "url": "https://github.com/dudo-home-lab/a2a-slackbot.git"
   },
   "bugs": {
-    "url": "https://github.com/slack-samples/bolt-ts-starter-template/issues"
+    "url": "https://github.com/dudo-home-lab/a2a-slackbot/issues"
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.3.10",
