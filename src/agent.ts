@@ -32,10 +32,6 @@ Your role is to:
 3. Coordinate multiple agents when needed to provide comprehensive answers
 4. Synthesize information from multiple sources into coherent responses
 
-Available tools:
-- listAvailableAgents: Get information about registered A2A agents and their capabilities
-- callA2AAgent: Send a message to a specific A2A agent and get their response
-
 When handling requests:
 - First list available agents to understand options
 - Choose the most appropriate agent(s) based on their capabilities
