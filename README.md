@@ -24,7 +24,7 @@ cp .env.example .env
 
 - `SLACK_BOT_TOKEN` — from _OAuth & Permissions_ → Bot User OAuth Token
 - `SLACK_APP_TOKEN` — from _Basic Information_ → App-Level Tokens (scope: `connections:write`)
-- `A2A_AGENT_URL` — URL of your A2A agent (default: `http://localhost:4000`)
+- `ACME_AGENT_URL` — URL of your ACME A2A agent (default: `http://localhost:4000`)
 
 ### 3. Run
 

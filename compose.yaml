@@ -46,7 +46,7 @@ services:
       - path: .env
         required: false
     environment:
-      - A2A_AGENT_URL=http://a2a-agent:4000
+      - ACME_AGENT_URL=http://a2a-agent:4000
     tty: true
     stdin_open: true
     build:

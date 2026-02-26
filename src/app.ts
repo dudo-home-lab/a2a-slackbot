@@ -1,7 +1,30 @@
 import { App, LogLevel } from '@slack/bolt';
+import { AgentRegistry } from './agent-registry/index.js';
 import assistant from './assistant.js';
 
-/** Initialization */
+/** Initialize Agent Registry */
+const orchestrator = new AgentRegistry();
+
+// Register agents (async discovery happens in background)
+if (process.env.ACME_AGENT_URL) {
+  orchestrator.registerAgent({
+    name: 'acme',
+    url: process.env.ACME_AGENT_URL,
+    description: 'ACME general purpose agent',
+  });
+}
+
+// TODO: Register additional agents as needed
+// Example:
+// if (process.env.ANALYTICS_AGENT_URL) {
+//   orchestrator.registerAgent({
+//     name: 'analytics',
+//     url: process.env.ANALYTICS_AGENT_URL,
+//     description: 'Analytics and data processing agent',
+//   });
+// }
+
+/** Initialize Slack App */
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   socketMode: true,
@@ -10,6 +33,6 @@ const app = new App({
 });
 
 /** Register Assistant */
-app.assistant(assistant);
+app.assistant(assistant(orchestrator));
 
 export default app;
