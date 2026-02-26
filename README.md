@@ -22,10 +22,6 @@ A Slack AI Assistant built with Bolt for JavaScript (TypeScript) that forwards m
 cp .env.sample .env
 ```
 
-- `SLACK_BOT_TOKEN` — from _OAuth & Permissions_ → Bot User OAuth Token
-- `SLACK_APP_TOKEN` — from _Basic Information_ → App-Level Tokens (scope: `connections:write`)
-- `ACME_AGENT_URL` — URL of your ACME A2A agent (default: `http://localhost:4000`)
-
 ### 3. Run
 
 ```sh
