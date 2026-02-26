@@ -19,7 +19,7 @@ A Slack AI Assistant built with Bolt for JavaScript (TypeScript) that forwards m
 ### 2. Configure Environment
 
 ```sh
-cp .env.example .env
+cp .env.sample .env
 ```
 
 - `SLACK_BOT_TOKEN` — from _OAuth & Permissions_ → Bot User OAuth Token
