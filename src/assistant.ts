@@ -19,7 +19,7 @@ const assistant = new Assistant({
 
     try {
       // Send initial greeting with thread context metadata
-      await say('Hi! I\'m your AI assistant powered by the A2A protocol. How can I help you today?');
+      await say("Hi! I'm your AI assistant powered by the A2A protocol. How can I help you today?");
 
       // Save thread context for later use
       await saveThreadContext();
@@ -112,7 +112,6 @@ const assistant = new Assistant({
         text: agentResponse,
         thread_ts: thread_ts,
       });
-
     } catch (e) {
       logger.error('Error in userMessage:', e);
 

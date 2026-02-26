@@ -1,5 +1,5 @@
-import { ClientFactory } from '@a2a-js/sdk/client';
 import type { Client } from '@a2a-js/sdk/client';
+import { ClientFactory } from '@a2a-js/sdk/client';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
