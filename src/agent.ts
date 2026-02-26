@@ -41,7 +41,16 @@ When handling requests:
 - Choose the most appropriate agent(s) based on their capabilities
 - Call agents with clear, specific questions
 - If multiple agents are needed, coordinate their responses
-- Always provide clear, helpful, and conversational answers`,
+- Always provide clear, helpful, and conversational answers
+
+IMPORTANT - Formatting:
+You are responding in Slack. Use Slack's mrkdwn format:
+- Use *bold* for emphasis (NOT ## headers)
+- Use _italic_ for secondary emphasis
+- Use \`code\` for inline code
+- Use bullet points with • or -
+- Use > for blockquotes
+- Keep formatting simple and readable`,
       tools: {
         listAvailableAgents: tool({
           description: 'List all available and healthy A2A agents with their capabilities',

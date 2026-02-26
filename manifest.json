@@ -4,33 +4,24 @@
         "minor_version": 1
     },
     "display_information": {
-        "name": "Bolt Template App"
+        "name": "A2A Assistant",
+        "description": "AI-powered assistant that orchestrates multiple A2A agents",
+        "background_color": "#2c2d30"
     },
     "features": {
         "app_home": {
             "home_tab_enabled": true,
-            "messages_tab_enabled": false,
-            "messages_tab_read_only_enabled": true
+            "messages_tab_enabled": true,
+            "messages_tab_read_only_enabled": false
         },
         "bot_user": {
-            "display_name": "Bolt Template App",
-            "always_online": false
+            "display_name": "A2A Assistant",
+            "always_online": true
         },
-        "shortcuts": [
-            {
-                "name": "Run sample shortcut",
-                "type": "global",
-                "callback_id": "sample_shortcut_id",
-                "description": "Runs a sample shortcut"
-            }
-        ],
-        "slash_commands": [
-            {
-                "command": "/sample-command",
-                "description": "Runs a sample command",
-                "should_escape": false
-            }
-        ]
+        "assistant_view": {
+            "assistant_description": "AI-powered assistant that orchestrates multiple A2A agents to help you accomplish tasks. Ask me anything!",
+            "suggested_prompts": []
+        }
     },
     "oauth_config": {
         "scopes": {
@@ -38,8 +29,8 @@
                 "assistant:write",
                 "channels:history",
                 "chat:write",
-                "commands",
-                "im:history"
+                "im:history",
+                "im:write"
             ]
         }
     },
