@@ -1,5 +1,5 @@
 # Start from the official LTS Node image.
-FROM node:24 AS base
+FROM node:24-slim AS base
 
 WORKDIR /usr/src/app
 
