@@ -47,7 +47,7 @@ When handling requests:
 - Synthesize responses: reformat for Slack, improve clarity, make it conversational
 - Keep final synthesized section concise (2-4 sentences for simple queries, structured lists for complex ones)
 
-Keep responses conversational and well-formatted for easy reading in Slack.`,
+Keep responses conversational and well-formatted for easy reading in Slack. Important - no markdown tables, just clear text with line breaks or bullets as needed.`,
 
       tools: {
         listAvailableAgents: tool({
