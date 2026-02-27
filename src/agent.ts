@@ -97,6 +97,7 @@ Keep responses conversational and well-formatted for easy reading in Slack.`,
     const contextType = context.channel_id ? 'channel' : 'direct message';
 
     const result = await generateText({
+      system: 'You are a greeter that generates a greeting message for users who open an AI assistant in Slack. The greeting should be warm, welcoming, and briefly mention that you can help with various tasks. Use the context about available agents to make it more personalized.',
       model: this.model,
       prompt: `Generate a brief, friendly greeting for a user who just opened an AI assistant in Slack (${contextType}).
 
@@ -126,18 +127,18 @@ Keep it conversational, welcoming, and briefly mention you can help with various
     try {
       const result = await generateText({
         model: this.model,
-        system: 'You generate structured JSON data. Output ONLY a valid JSON string matching the schema. NO markdown. NO code fencing with ```. NO newline characters. NO explanatory text.',
+        system: 'You are an AI assistant that generates suggested prompts for users based on available agents and their capabilities.',
         prompt: `Generate 2-3 suggested prompts for a Slack ${contextType}.
 
 Available agents:
 ${agents.map((a) => `- ${a.name}: ${a.description}${a.capabilities?.length ? ` (${a.capabilities.join(', ')})` : ''}`).join('\n')}
 
-Create prompts that showcase these agent capabilities. Output a SINGLE JSON STRING (no markdown, no code fencing, no newlines) with an array of objects with "title" (2-4 word summary) and "message" (full question user would ask). For example:
-[
-  { "title": "Weather Forecast", "message": "What's the weather forecast for this weekend?" },
-  { "title": "Farming Advice", "message": "How should I prepare my goat farm for winter?" }
-]`,
-        output: Output.json(schema),
+Create prompts that showcase these agent capabilities.`,
+        output: Output.object({
+          name: 'suggestedPrompts',
+          description: 'Structured suggested prompts for the user',
+          schema,
+        }),
         maxOutputTokens: 300,
       });
 
@@ -145,8 +146,6 @@ Create prompts that showcase these agent capabilities. Output a SINGLE JSON STRI
         console.warn('No structured output received for suggested prompts');
         return this.getFallbackPrompts();
       }
-
-      console.log(result.output);
 
       return result.output as z.infer<typeof schema>;
     } catch (error) {
