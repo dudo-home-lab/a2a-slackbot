@@ -10,19 +10,17 @@ if (process.env.ACME_AGENT_URL) {
   orchestrator.registerAgent({
     name: 'acme',
     url: process.env.ACME_AGENT_URL,
-    description: 'ACME general purpose agent',
+    description: 'ACME goat farming expert agent',
   });
 }
 
-// TODO: Register additional agents as needed
-// Example:
-// if (process.env.ANALYTICS_AGENT_URL) {
-//   orchestrator.registerAgent({
-//     name: 'analytics',
-//     url: process.env.ANALYTICS_AGENT_URL,
-//     description: 'Analytics and data processing agent',
-//   });
-// }
+if (process.env.WEATHER_AGENT_URL) {
+  orchestrator.registerAgent({
+    name: 'weather',
+    url: process.env.WEATHER_AGENT_URL,
+    description: 'Weather information and forecasting agent',
+  });
+}
 
 /** Initialize Slack App */
 const app = new App({

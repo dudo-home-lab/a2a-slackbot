@@ -62,46 +62,71 @@ export default function createAssistant(orchestrator: AgentRegistry) {
      * Handle user message event
      * Processes messages sent by the user and responds via A2A agent
      */
-    userMessage: async ({ logger, message, getThreadContext, say, setTitle, setStatus }) => {
+    userMessage: async ({ logger, client, message, say, setTitle, setStatus }) => {
       // Validate message structure
       if (!('text' in message) || !('thread_ts' in message) || !message.text || !message.thread_ts) {
         return;
       }
 
-      const { thread_ts } = message;
+      const { thread_ts, channel } = message;
 
       try {
-        // Set thread title based on first user message
-        await setTitle(message.text);
-
-        // Generate contextual loading messages
-        const loadingMessages = await agent.generateLoadingMessages();
-
-        // Show processing status
-        await setStatus({
-          status: 'thinking...',
-          loading_messages: loadingMessages,
+        // Retrieve the Assistant thread history from Slack for context
+        // Fetch only the most recent messages for the context window
+        const thread = await client.conversations.replies({
+          channel,
+          ts: thread_ts,
+          limit: 20, // Fetch the most recent 20 messages (~10 turns of context)
         });
 
-        // Get thread context for additional context
-        const threadContext = await getThreadContext();
-        logger.info('Thread context:', threadContext);
+        // Set thread title only on first user message
+        if ((thread.messages?.length || 0) <= 3) {
+          // Generate AI title asynchronously - don't block on it
+          agent.generateThreadTitle(message.text).then(
+            (title) => setTitle(title),
+            (error) => logger.error('Failed to generate thread title:', error),
+          );
+        }
 
-        // Process message through agent
-        const response = await agent.processMessage(message.text);
+        // Convert Slack messages to AI SDK ModelMessage format
+        const conversationHistory = (thread.messages || []).map((m) => ({
+          role: m.bot_id ? ('assistant' as const) : ('user' as const),
+          content: m.text || '',
+        }));
 
-        // Send agent response back to user
-        await say({
-          text: response,
-          thread_ts: thread_ts,
-        });
+        logger.debug(`Processing message with ${conversationHistory.length} messages of context`);
+
+        try {
+          // Process message through agent, sending response chunks as discrete messages
+          const response = await agent.processMessage(
+            conversationHistory,
+            // onText callback - send text chunks directly
+            async (text) => {
+              await say({
+                text,
+                thread_ts,
+              });
+            },
+            // onStatus callback - update visible status during tool execution
+            async (status) => {
+              await setStatus({ status });
+            },
+          );
+
+          // Clear status now that we're done
+          await setStatus({ status: '' });
+
+          logger.debug(`Sent complete response (${response.length} chars)`);
+        } catch (responseError) {
+          logger.error('Error during message processing:', responseError);
+        }
       } catch (e) {
         logger.error('Error in userMessage:', e);
 
         // Send error message and clear status
         await say({
           text: `Sorry, something went wrong! ${e instanceof Error ? e.message : String(e)}`,
-          thread_ts: thread_ts,
+          thread_ts,
         });
       }
     },

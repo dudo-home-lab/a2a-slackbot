@@ -43,6 +43,22 @@ services:
     volumes:
       - acme_agent_node_modules:/usr/src/app/node_modules:cached
 
+  weather-agent:
+    env_file:
+      - path: ../a2a-mcp-agent/.env
+        required: false
+    tty: true
+    stdin_open: true
+    build:
+      context: ../a2a-mcp-agent
+      target: builder
+    entrypoint: npm
+    command: run start
+    ports:
+      - 4001:4000
+    volumes:
+      - weather_agent_node_modules:/usr/src/app/node_modules:cached
+
   # We can't use <<: *npm with develop.watch due to the volume overlap.
   app:
     env_file:
@@ -50,6 +66,7 @@ services:
         required: false
     environment:
       - ACME_AGENT_URL=http://acme-agent:4000
+      - WEATHER_AGENT_URL=http://weather-agent:4000
     tty: true
     stdin_open: true
     build:
@@ -61,6 +78,7 @@ services:
       - ${PORT:-3000}:${PORT:-3000}
     depends_on:
       - acme-agent
+      - weather-agent
     develop:
       watch:
         - action: sync+restart
@@ -97,3 +115,4 @@ services:
 volumes:
   node_modules:
   acme_agent_node_modules:
+  weather_agent_node_modules:

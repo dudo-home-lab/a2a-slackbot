@@ -1,5 +1,5 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import { generateText, ToolLoopAgent, tool } from 'ai';
+import { generateText, stepCountIs, ToolLoopAgent, tool, type ModelMessage } from 'ai';
 import { z } from 'zod';
 import type { AgentRegistry } from './agent-registry/index.js';
 
@@ -24,6 +24,7 @@ export class Agent {
     this.model = anthropic(process.env.ANTHROPIC_MODEL);
     this.toolLoopAgent = new ToolLoopAgent({
       model: this.model,
+      stopWhen: stepCountIs(10), // Allow up to 10 steps for orchestration
       instructions: `You are an intelligent AI assistant powered by multiple A2A (Agent-to-Agent) agents.
 
 Your role is to:
@@ -32,20 +33,40 @@ Your role is to:
 3. Coordinate multiple agents when needed to provide comprehensive answers
 4. Synthesize responses from A2A agents into clear, concise, Slack-optimized answers
 
-When handling requests:
-- First list available agents to understand options
-- Choose the most appropriate agent(s) based on their capabilities
-- Call agents with clear, specific questions
-- Synthesize their responses: reformat for Slack, improve clarity, make it conversational
-- Keep final responses concise and actionable (2-4 sentences for simple queries, structured lists for complex ones)
+IMPORTANT - Transparent Operation:
+- Narrate what you're doing in real-time as you work
+- Before calling agents, say what you're about to do (e.g., "Let me check the weather forecast...")
+- When waiting for responses, you can add brief updates
+- After getting responses, synthesize them into the final answer
+- This helps users understand the multi-agent coordination happening
 
-Essential - Response Synthesis:
-You ALWAYS synthesize A2A agent responses before returning to users:
-- Convert Markdown (##, ###) to Slack mrkdwn (*bold*, _italic_)
-- Improve structure and flow for readability
-- Make responses conversational and friendly
-- Remove unnecessary verbosity while preserving key information
-- Use bullet points (•) and clear sections for complex information`,
+When handling requests:
+- First check available agents: "Let me see what agents can help with this..."
+- Choose agent(s): "I'll get weather data and farming advice for you..."
+- Call agents with clear, specific questions
+- Synthesize responses: reformat for Slack, improve clarity, make it conversational
+- Keep final synthesized section concise (2-4 sentences for simple queries, structured lists for complex ones)
+
+CRITICAL - Slack Formatting Only:
+NEVER use markdown syntax. This is Slack, not markdown. You MUST follow these rules:
+- NO ## or ### headers - use *bold text* for section titles instead
+- NO --- horizontal rules - just use line breaks
+- NO • bullets - use simple dashes: - Item one
+- NO :emoji_name: in text - Slack handles emoji differently
+- YES to *bold* for emphasis (single asterisks)
+- YES to _italic_ for secondary emphasis (single underscores)
+- YES to simple dashes for lists
+- YES to line breaks for structure
+
+Example BAD (markdown):
+## Weather Forecast
+### Temperature
+• High: 72°F
+
+Example GOOD (Slack):
+*Weather Forecast*
+Temperature
+- High: 72°F`,
       tools: {
         listAvailableAgents: tool({
           description: 'List all available and healthy A2A agents with their capabilities',
@@ -71,6 +92,7 @@ You ALWAYS synthesize A2A agent responses before returning to users:
           execute: async (input: { agentName: string; message: string }) => {
             try {
               const response = await this.orchestrator.sendToAgent(input.agentName, input.message);
+
               return { success: true, agentName: input.agentName, response };
             } catch (error) {
               return {
@@ -98,7 +120,9 @@ You ALWAYS synthesize A2A agent responses before returning to users:
 
 Available agents: ${agents.map((a) => `${a.name} (${a.description})`).join(', ')}
 
-Keep it conversational, welcoming, and briefly mention you can help with various tasks. Maximum 2 sentences.`,
+Keep it conversational, welcoming, and briefly mention you can help with various tasks. Maximum 2 sentences.
+
+IMPORTANT: Use plain text or Slack emoji, NO markdown headers (no #). Use *bold* for emphasis if needed.`,
       maxOutputTokens: 150,
     });
 
@@ -146,46 +170,97 @@ Make prompts specific to available agent capabilities. Keep titles concise.`,
   }
 
   /**
-   * Generate contextual loading messages
+   * Generate a concise thread title from user's message
    */
-  async generateLoadingMessages(): Promise<string[]> {
+  async generateThreadTitle(message: string): Promise<string> {
     const result = await generateText({
       model: this.model,
-      prompt: `Generate 3-4 brief, encouraging loading messages for when an AI assistant is processing a request.
+      prompt: `Generate a very short, descriptive title (3-6 words max) for this user question:
 
-Return in JSON format as an array of strings:
-["message1", "message2", ...]
+"${message}"
 
-Keep them short (3-6 words), friendly, and varied. Examples: "Thinking through this...", "Consulting experts...", "Processing your question..."`,
-      maxOutputTokens: 200,
+Return ONLY the title text, no quotes or formatting. Examples:
+- "What's the weather?" → "Weather Forecast"
+- "I need help with my goat farm in winter" → "Winter Goat Farm Advice"
+- "Tell me about agent capabilities" → "Agent Capabilities"`,
+      maxOutputTokens: 30,
     });
 
-    try {
-      const jsonMatch = result.text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-    } catch (error) {
-      console.error('Failed to parse loading messages:', error);
-    }
-
-    // Fallback
-    return ['Thinking...', 'Processing...', 'Working on it...', 'Almost there...'];
+    return result.text.trim().replace(/^["']|["']$/g, '');
   }
 
   /**
-   * Process a user message through the autonomous agent
+   * Process messages through the autonomous agent with full conversation context
+   *
+   * @param messages - Array of conversation messages with roles (user/assistant)
+   * @param onText - Optional callback for streaming text chunks as they're generated
+   * @param onStatus - Optional callback for status updates during tool execution
+   * @returns The agent's complete response
    */
-  async processMessage(message: string): Promise<string> {
+  async processMessage(
+    messages: ModelMessage[],
+    onText?: (chunk: string) => void | Promise<void>,
+    onStatus?: (status: string) => void | Promise<void>,
+  ): Promise<string> {
     const healthyAgents = this.orchestrator.getHealthyAgents();
     if (healthyAgents.length === 0) {
       throw new Error('No healthy agents available');
     }
 
-    console.log(`Agent processing request: "${message}"`);
+    const lastMessage = messages[messages.length - 1];
+    console.debug(`Agent processing request: "${lastMessage.content}" (${messages.length} messages in context)`);
+
+    // Stream response if callback provided, otherwise generate synchronously
+    if (onText) {
+      const result = await this.toolLoopAgent.stream({
+        messages,
+      });
+      let responseText = '';
+
+      // Use fullStream to get step-by-step events
+      for await (const event of result.fullStream) {
+        switch (event.type) {
+          case 'tool-call':
+            // Update status to show which tool is running
+            if (onStatus) {
+              if (event.toolName === 'callA2AAgent') {
+                await onStatus('Consulting specialist agents...');
+              }
+            }
+            break;
+
+          case 'tool-result':
+            if (onStatus && event.toolName === 'callA2AAgent') {
+              await onStatus('Synthesizing response...');
+            }
+            break;
+
+          case 'text-delta':
+            responseText += event.text;
+            break;
+
+          case 'text-end':
+            await onText(`${responseText}\n\n`);
+            responseText = '';
+            break;
+        }
+      }
+
+      // Wait for complete response and usage
+      const fullText = await result.text;
+      const usage = await result.usage;
+
+      console.debug(`Agent sent response in chunks (${usage.totalTokens} tokens)`);
+
+      return fullText;
+    }
+
+    // Non-streaming fallback
     const result = await this.toolLoopAgent.generate({
-      prompt: message,
+      messages,
     });
+
+    console.debug(`Agent generated response (${result.usage?.totalTokens || 0} tokens)`);
 
     return result.text;
   }
