@@ -21,13 +21,14 @@ export default function createAssistant(orchestrator: AgentRegistry) {
      */
     threadStarted: async ({ event, logger, say, setSuggestedPrompts, saveThreadContext }) => {
       const { context } = event.assistant_thread;
+      const title = 'Try asking me:';
 
       try {
         // Generate contextual greeting
-        const greeting = await agent.generateGreeting({
+        const markdown_text = await agent.generateGreeting({
           channel_id: context.channel_id,
         });
-        await say(greeting);
+        await say({ markdown_text });
 
         // Save thread context for later use
         await saveThreadContext();
@@ -37,10 +38,7 @@ export default function createAssistant(orchestrator: AgentRegistry) {
           channel_id: context.channel_id,
         });
 
-        await setSuggestedPrompts({
-          title: 'Try asking me:',
-          prompts: prompts,
-        });
+        await setSuggestedPrompts({ title, prompts });
       } catch (e) {
         logger.error('Error in threadStarted:', e);
       }
@@ -101,11 +99,8 @@ export default function createAssistant(orchestrator: AgentRegistry) {
           const response = await agent.processMessage(
             conversationHistory,
             // onText callback - send text chunks directly
-            async (text) => {
-              await say({
-                text,
-                thread_ts,
-              });
+            async (markdown_text) => {
+              await say({ markdown_text });
             },
             // onStatus callback - update visible status during tool execution
             async (status) => {
@@ -126,7 +121,6 @@ export default function createAssistant(orchestrator: AgentRegistry) {
         // Send error message and clear status
         await say({
           text: `Sorry, something went wrong! ${e instanceof Error ? e.message : String(e)}`,
-          thread_ts,
         });
       }
     },

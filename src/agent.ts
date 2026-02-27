@@ -1,5 +1,5 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import { generateText, stepCountIs, ToolLoopAgent, tool, type ModelMessage } from 'ai';
+import { generateText, Output, stepCountIs, ToolLoopAgent, tool, type ModelMessage } from 'ai';
 import { z } from 'zod';
 import type { AgentRegistry } from './agent-registry/index.js';
 
@@ -47,26 +47,8 @@ When handling requests:
 - Synthesize responses: reformat for Slack, improve clarity, make it conversational
 - Keep final synthesized section concise (2-4 sentences for simple queries, structured lists for complex ones)
 
-CRITICAL - Slack Formatting Only:
-NEVER use markdown syntax. This is Slack, not markdown. You MUST follow these rules:
-- NO ## or ### headers - use *bold text* for section titles instead
-- NO --- horizontal rules - just use line breaks
-- NO • bullets - use simple dashes: - Item one
-- NO :emoji_name: in text - Slack handles emoji differently
-- YES to *bold* for emphasis (single asterisks)
-- YES to _italic_ for secondary emphasis (single underscores)
-- YES to simple dashes for lists
-- YES to line breaks for structure
+Keep responses conversational and well-formatted for easy reading in Slack.`,
 
-Example BAD (markdown):
-## Weather Forecast
-### Temperature
-• High: 72°F
-
-Example GOOD (Slack):
-*Weather Forecast*
-Temperature
-- High: 72°F`,
       tools: {
         listAvailableAgents: tool({
           description: 'List all available and healthy A2A agents with their capabilities',
@@ -120,9 +102,7 @@ Temperature
 
 Available agents: ${agents.map((a) => `${a.name} (${a.description})`).join(', ')}
 
-Keep it conversational, welcoming, and briefly mention you can help with various tasks. Maximum 2 sentences.
-
-IMPORTANT: Use plain text or Slack emoji, NO markdown headers (no #). Use *bold* for emphasis if needed.`,
+Keep it conversational, welcoming, and briefly mention you can help with various tasks. Maximum 2 sentences.`,
       maxOutputTokens: 150,
     });
 
@@ -136,33 +116,46 @@ IMPORTANT: Use plain text or Slack emoji, NO markdown headers (no #). Use *bold*
     const agents = this.orchestrator.getHealthyAgents();
     const contextType = context.channel_id ? 'channel' : 'direct message';
 
-    const result = await generateText({
-      model: this.model,
-      prompt: `Generate 2-3 suggested prompts for a user in a Slack ${contextType}.
-
-Available agents and their capabilities:
-${agents.map((a) => `- ${a.name}: ${a.description}${a.capabilities?.length ? ` (${a.capabilities.join(', ')})` : ''}`).join('\n')}
-
-Return in JSON format:
-[
-  {"title": "Short title (2-4 words)", "message": "Full question user would ask"},
-  ...
-]
-
-Make prompts specific to available agent capabilities. Keep titles concise.`,
-      maxOutputTokens: 300,
-    });
+    const schema = z.array(
+      z.object({
+        title: z.string().describe('Short title (2-4 words)'),
+        message: z.string().describe('Full question user would ask'),
+      }),
+    );
 
     try {
-      const jsonMatch = result.text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-    } catch (error) {
-      console.error('Failed to parse suggested prompts:', error);
-    }
+      const result = await generateText({
+        model: this.model,
+        system: 'You generate structured JSON data. Output ONLY a valid JSON string matching the schema. NO markdown. NO code fencing with ```. NO newline characters. NO explanatory text.',
+        prompt: `Generate 2-3 suggested prompts for a Slack ${contextType}.
 
-    // Fallback
+Available agents:
+${agents.map((a) => `- ${a.name}: ${a.description}${a.capabilities?.length ? ` (${a.capabilities.join(', ')})` : ''}`).join('\n')}
+
+Create prompts that showcase these agent capabilities. Output a SINGLE JSON STRING (no markdown, no code fencing, no newlines) with an array of objects with "title" (2-4 word summary) and "message" (full question user would ask). For example:
+[
+  { "title": "Weather Forecast", "message": "What's the weather forecast for this weekend?" },
+  { "title": "Farming Advice", "message": "How should I prepare my goat farm for winter?" }
+]`,
+        output: Output.json(schema),
+        maxOutputTokens: 300,
+      });
+
+      if (!result.output) {
+        console.warn('No structured output received for suggested prompts');
+        return this.getFallbackPrompts();
+      }
+
+      console.log(result.output);
+
+      return result.output as z.infer<typeof schema>;
+    } catch (error) {
+      console.error('Error generating suggested prompts:', error);
+      return this.getFallbackPrompts();
+    }
+  }
+
+  private getFallbackPrompts() {
     return [
       { title: 'Get started', message: 'What can you help me with?' },
       { title: 'Learn more', message: 'Tell me about your capabilities' },
@@ -239,10 +232,16 @@ Return ONLY the title text, no quotes or formatting. Examples:
             responseText += event.text;
             break;
 
-          case 'text-end':
+          case 'text-end': {
+            // Only strip trailing colons if not part of a complete emoji (:emoji_name:)
+            if (!/:[a-z0-9_+-]+:\s*$/i.test(responseText)) {
+              responseText = responseText.replace(/:+\s*$/, '');
+            }
             await onText(`${responseText}\n\n`);
             responseText = '';
+
             break;
+          }
         }
       }
 
