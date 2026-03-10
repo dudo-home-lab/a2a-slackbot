@@ -10,7 +10,7 @@
     "start": "node ./dist/index.js",
     "lint": "npx @biomejs/biome check src",
     "lint:fix": "npx @biomejs/biome check --write src",
-    "test": "npm run build && npm run lint"
+    "test": "node --import tsx --test 'src/**/*.test.ts'"
   },
   "author": "dudo-home-lab",
   "license": "MIT",

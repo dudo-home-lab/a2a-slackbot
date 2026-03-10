@@ -88,11 +88,9 @@ export default function createAssistant(agent: Agent) {
           content: m.text || '',
         }));
 
-        logger.debug(`Processing message with ${conversationHistory.length} messages of context`);
-
         try {
           // Process message through agent, sending response chunks as discrete messages
-          const response = await agent.processMessage(
+          await agent.processMessage(
             conversationHistory,
             // onText callback - send text chunks directly
             async (markdown_text) => {
@@ -106,8 +104,6 @@ export default function createAssistant(agent: Agent) {
 
           // Clear status now that we're done
           await setStatus({ status: '' });
-
-          logger.debug(`Sent complete response (${response.length} chars)`);
         } catch (responseError) {
           logger.error('Error during message processing:', responseError);
         }
