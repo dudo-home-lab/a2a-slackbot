@@ -46,8 +46,14 @@ When handling requests:
 - Keep final synthesized section concise (2-4 sentences for simple queries, structured lists for complex ones)
 
 Keep responses conversational and well-formatted for easy reading in Slack. Important - no markdown tables, just clear text with line breaks or bullets as needed.`,
-
       tools: createTools(orchestrator),
+      onStepFinish: ({ toolCalls, usage }) => {
+        const tools = toolCalls.map((tc) => tc.toolName).join(', ');
+        console.debug(`Step finished: ${tools || 'text only'} (${usage.totalTokens} tokens)`);
+      },
+      onFinish: ({ text, steps, usage }) => {
+        console.debug(`Agent finished: ${steps.length} steps, ${usage.totalTokens} tokens, ${text.length} chars`);
+      },
     });
   }
 
@@ -165,15 +171,15 @@ Return ONLY the title text, no quotes or formatting. Examples:
 
     // Inject available agents as context so the model doesn't need to discover them
     const agentList = healthyAgents
-      .map((a) => `- ${a.name}: ${a.description || 'No description'}${a.capabilities?.length ? ` (${a.capabilities.join(', ')})` : ''}`)
+      .map(
+        (a) =>
+          `- ${a.name}: ${a.description || 'No description'}${a.capabilities?.length ? ` (${a.capabilities.join(', ')})` : ''}`,
+      )
       .join('\n');
     const contextMessages: ModelMessage[] = [
       { role: 'system', content: `Available agents:\n${agentList}` },
       ...messages,
     ];
-
-    const lastMessage = messages[messages.length - 1];
-    console.debug(`Agent processing request: "${lastMessage.content}" (${messages.length} messages in context)`);
 
     // Stream response if callback provided, otherwise generate synchronously
     if (onText) {
@@ -225,21 +231,13 @@ Return ONLY the title text, no quotes or formatting. Examples:
         }
       }
 
-      // Wait for complete response and usage
-      const fullText = await result.text;
-      const usage = await result.usage;
-
-      console.debug(`Agent sent response in chunks (${usage.totalTokens} tokens)`);
-
-      return fullText;
+      return await result.text;
     }
 
     // Non-streaming fallback
     const result = await this.toolLoopAgent.generate({
       messages: contextMessages,
     });
-
-    console.debug(`Agent generated response (${result.usage?.totalTokens || 0} tokens)`);
 
     return result.text;
   }

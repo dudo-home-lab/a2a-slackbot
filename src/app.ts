@@ -1,12 +1,19 @@
 import { App, LogLevel } from '@slack/bolt';
 import { Agent } from './agent/index.js';
+import { discoverAgents } from './agent/discovery.js';
 import { AgentRegistry } from './agent/registry.js';
 import registerListeners from './listeners/index.js';
 
 /** Initialize Agent Registry */
 const orchestrator = new AgentRegistry();
 
-// Register agents (async discovery happens in background)
+// Discover agents from ANS registry
+const ansAgents = await discoverAgents();
+for (const config of ansAgents) {
+  orchestrator.registerAgent(config);
+}
+
+// Register manually configured agents (override / supplement ANS discovery)
 if (process.env.ACME_AGENT_URL) {
   orchestrator.registerAgent({
     name: 'acme',

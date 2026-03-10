@@ -10,7 +10,6 @@ import type { Agent } from '../../agent/index.js';
  * - userMessage: When user sends a message to the bot
  */
 export default function createAssistant(agent: Agent) {
-
   return new Assistant({
     /**
      * Handle new thread started event
