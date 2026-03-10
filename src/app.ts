@@ -1,6 +1,7 @@
 import { App, LogLevel } from '@slack/bolt';
-import { AgentRegistry } from './agent-registry/index.js';
-import assistant from './assistant.js';
+import { Agent } from './agent/index.js';
+import { AgentRegistry } from './agent/registry.js';
+import registerListeners from './listeners/index.js';
 
 /** Initialize Agent Registry */
 const orchestrator = new AgentRegistry();
@@ -22,6 +23,17 @@ if (process.env.WEATHER_AGENT_URL) {
   });
 }
 
+if (process.env.TRAVEL_AGENT_URL) {
+  orchestrator.registerAgent({
+    name: 'travel',
+    url: process.env.TRAVEL_AGENT_URL,
+    description: 'Travel planning and itinerary agent',
+  });
+}
+
+/** Initialize Agent */
+const agent = new Agent(orchestrator);
+
 /** Initialize Slack App */
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -30,7 +42,7 @@ const app = new App({
   logLevel: LogLevel[(process.env.LOG_LEVEL || 'INFO').toUpperCase() as keyof typeof LogLevel],
 });
 
-/** Register Assistant */
-app.assistant(assistant(orchestrator));
+/** Register Listeners */
+registerListeners(app, agent);
 
 export default app;

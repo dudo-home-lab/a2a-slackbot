@@ -1,6 +1,5 @@
 import { Assistant } from '@slack/bolt';
-import { createAgent } from './agent.js';
-import type { AgentRegistry } from './agent-registry/index.js';
+import type { Agent } from '../../agent/index.js';
 
 /**
  * Slack Assistant handler factory for AI-powered agent interactions.
@@ -10,9 +9,7 @@ import type { AgentRegistry } from './agent-registry/index.js';
  * - threadContextChanged: When user switches channels with thread open
  * - userMessage: When user sends a message to the bot
  */
-export default function createAssistant(orchestrator: AgentRegistry) {
-  // Create the autonomous AI agent
-  const agent = createAgent(orchestrator);
+export default function createAssistant(agent: Agent) {
 
   return new Assistant({
     /**
