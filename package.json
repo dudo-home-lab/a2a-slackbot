@@ -28,7 +28,7 @@
     "url": "https://github.com/dudo-home-lab/a2a-slackbot/issues"
   },
   "dependencies": {
-    "@a2a-js/sdk": "^0.3.10",
+    "@a2a-js/sdk": "^0.3.13",
     "@ai-sdk/anthropic": "^3.0.64",
     "@slack/bolt": "^4.6.0",
     "ai": "^6.0.142",
