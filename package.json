@@ -36,7 +36,7 @@
     "zod": "^4.4.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.13",
+    "@biomejs/biome": "^2.4.16",
     "@slack/types": "^2.20.1",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^25.6.0",
