@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@a2a-js/sdk": "^0.3.13",
-    "@ai-sdk/anthropic": "^3.0.73",
+    "@ai-sdk/anthropic": "^3.0.81",
     "@slack/bolt": "^4.7.2",
     "ai": "^6.0.193",
     "uuid": "^11.0.5",
