@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
-    "@slack/types": "^2.20.1",
+    "@slack/types": "^2.21.1",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^25.6.0",
     "tsx": "^4.22.4",
