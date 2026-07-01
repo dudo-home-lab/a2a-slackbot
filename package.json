@@ -33,7 +33,7 @@
     "@slack/bolt": "^4.7.3",
     "ai": "^6.0.193",
     "uuid": "^11.0.5",
-    "zod": "^4.4.1"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
